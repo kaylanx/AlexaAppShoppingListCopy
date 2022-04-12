@@ -9,15 +9,6 @@ import SwiftUI
 
 let alexaBlueColor = Color(red:0.05, green: 0.39, blue: 0.66)
 
-struct Item: Identifiable {
-    var id: String {
-        name
-    }
-
-    let name: String
-    var completed: Bool
-}
-
 struct CheckBoxView: View {
     @Binding var checked: Bool
 
@@ -25,26 +16,35 @@ struct CheckBoxView: View {
         Image(systemName: checked ? "checkmark.square.fill" : "square")
             .foregroundColor(checked ? alexaBlueColor : Color.secondary)
             .onTapGesture {
-                self.checked.toggle()
+                withAnimation {
+                    self.checked.toggle()
+                }
             }
     }
 }
 
 struct ListItemView: View {
 
-    @State var item: Item
+    @Binding var item: Item
 
     var body: some View {
         HStack {
             CheckBoxView(checked: $item.completed)
             Text(item.name)
+                .padding()
         }
     }
 }
 
-struct ContentView: View {
+struct Item: Identifiable {
+    var id: UUID = UUID()
+    let name: String
+    var completed: Bool
+}
 
-    private let items = [
+class ListItemsViewModel: ObservableObject {
+
+    @Published var items = [
         Item(name: "Oxo cubes", completed: false),
         Item(name: "Flavoured water", completed: false),
         Item(name: "Baby wipes", completed: false),
@@ -56,6 +56,11 @@ struct ContentView: View {
         Item(name: "Bread", completed: true),
         Item(name: "Rinse aid", completed: true),
     ]
+}
+
+struct ContentView: View {
+
+    @StateObject private var viewModel = ListItemsViewModel()
 
     var body: some View {
         NavigationView {
@@ -76,16 +81,16 @@ struct ContentView: View {
 
                 List {
 
-                    ForEach(items) { item in
+                    ForEach($viewModel.items) { $item in
                         if (item.completed == false) {
-                            ListItemView(item: item)
+                            ListItemView(item: $item)
                         }
                     }
 
                     Section {
-                        ForEach(items) { item in
+                        ForEach($viewModel.items) { $item in
                             if (item.completed == true) {
-                                ListItemView(item: item)
+                                ListItemView(item: $item)
                             }
                         }
                     } header: {
